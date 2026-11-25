@@ -161,6 +161,10 @@
     return n + suffix + ' ' + d.toLocaleDateString('en-GB', { month: 'short' }) + ' ' + d.getFullYear() + ', ' +
       d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   }
+  function localNowValue() {
+    var d = new Date(), p = function (n) { return String(n).padStart(2, '0'); };
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
   function invError() {
     if (state.invWhen === 'schedule' && state.invDateTime && new Date(state.invDateTime).getTime() <= Date.now()) {
       return 'Invitation time must be in the future.';
@@ -346,7 +350,7 @@
         '<div class="controls"><div class="radios" role="radiogroup" aria-labelledby="label-inv-when">' + when + '</div></div></div></div>';
       if (state.invWhen === 'schedule') {
         inv += '<div><div class="nested-row depth-1 date-row" data-setting="inv-datetime"><div class="lead"><span class="label-line"><span class="setting-label">Invitation date &amp; time</span></span></div>' +
-          '<div class="controls"><div class="field-col">' + dateField('id="control-inv-datetime" data-inv-date', 'Invitation date and time', state.invDateTime, !!err) +
+          '<div class="controls"><div class="field-col">' + dateField('id="control-inv-datetime" data-inv-date min="' + localNowValue() + '"', 'Invitation date and time', state.invDateTime, !!err) +
           (err ? '<p class="field-error" role="alert">' + err + '</p>' : '') + '</div></div></div></div>';
       }
       inv += actions('inv', 'View Invitation Mail');
@@ -553,6 +557,12 @@
   app.addEventListener('click', function (e) {
     var t = e.target;
     var el;
+
+    if (t.matches && t.matches('input[type=datetime-local]') && t.showPicker) {
+      try { t.showPicker(); } catch (err) { /* already open or not allowed */ }
+      return;
+    }
+
 
     if ((el = t.closest('[data-update]'))) {
       if (el.disabled) return;
