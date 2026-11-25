@@ -96,6 +96,11 @@
     reviewEnd: '',
     stats: 'Private',
     formLink: '',
+    invWhen: 'immediately',
+    invDateTime: '',
+    remHours: 0,
+    remMinutes: 5,
+    saved: { invWhen: 'immediately', invDateTime: '', remHours: 0, remMinutes: 5 },
     events: { start: false, end: false },
     services: [],
     menuOpen: false
@@ -132,10 +137,35 @@
     'tab-reporting': ['Reporting & Analytics', 'Choose integrity checks, reports, and insights shown to reviewers.']
   };
 
+  Object.keys(HEADERS).forEach(function (k) { TIPS['header:' + k] = HEADERS[k][1]; });
+
   /* ---------- helpers ---------- */
   function esc(s) {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
+  // Stand-in for the exam start date from Assessment Details: next full hour at least 30 min away.
+  var EXAM_START = (function () {
+    var d = new Date(Date.now() + 30 * 60000);
+    d.setMinutes(0, 0, 0); d.setHours(d.getHours() + 1);
+    return d.getTime();
+  })();
+  function fmt(ms) {
+    var d = new Date(ms);
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) + ', ' +
+      d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  }
+  function invError() {
+    if (state.invWhen === 'schedule' && state.invDateTime && new Date(state.invDateTime).getTime() <= Date.now()) {
+      return 'Invitation time must be in the future.';
+    }
+    return '';
+  }
+  function remTotal() { return state.remHours * 60 + state.remMinutes; }
+  function normalizeReminder() {
+    if (remTotal() < 5) state.remMinutes = 5;
+  }
+  function invDirty() { return state.invWhen !== state.saved.invWhen || state.invDateTime !== state.saved.invDateTime; }
+  function remDirty() { return state.remHours !== state.saved.remHours || state.remMinutes !== state.saved.remMinutes; }
   function slug(s) {
     return String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   }
@@ -192,8 +222,8 @@
     return (
       '<span class="stepper-wrap"><span class="stepper"><input id="control-' + id + '" data-stepper="' + id + '" data-min="' + min + '" data-max="' + max +
       '" inputmode="numeric" aria-label="' + esc(label) + '" aria-valuemin="' + min + '" aria-valuemax="' + max + '" aria-valuenow="' + value + '" value="' + value + '">' +
-      '<span class="stepper-spin"><button type="button" data-step="' + id + '" data-dir="1" aria-label="Increase ' + esc(label) + '">' + CHEV_UP.replace('__STYLE__', '') + '</button>' +
-      '<button type="button" data-step="' + id + '" data-dir="-1" aria-label="Decrease ' + esc(label) + '">' + CHEV_UP.replace('__STYLE__', ' style="transform: rotate(180deg);"') + '</button></span></span>' +
+      '<span class="stepper-spin"><button type="button" data-step="' + id + '" data-dir="1"' + (value >= max ? ' disabled' : '') + ' aria-label="Increase ' + esc(label) + '">' + CHEV_UP.replace('__STYLE__', '') + '</button>' +
+      '<button type="button" data-step="' + id + '" data-dir="-1"' + (value <= min ? ' disabled' : '') + ' aria-label="Decrease ' + esc(label) + '">' + CHEV_UP.replace('__STYLE__', ' style="transform: rotate(180deg);"') + '</button></span></span>' +
       (suffix ? '<span class="suffix">' + suffix + '</span>' : '') + '</span>'
     );
   }
@@ -212,10 +242,10 @@
     );
   }
 
-  function dateField(attr, label, val) {
-    var shown = val ? val.replace('T', ' ') : '';
+  function dateField(attr, label, val, invalid) {
+    var shown = val ? fmt(new Date(val).getTime()) : '';
     return (
-      '<label class="date-field' + (val ? ' has-value' : '') + '">' + CAL +
+      '<label class="date-field' + (val ? ' has-value' : '') + (invalid ? ' is-invalid' : '') + '">' + CAL +
       (val ? '<span class="date-value">' + esc(shown) + '</span>' : '<span class="date-placeholder">Select Date &amp; Time</span>') +
       '<input ' + attr + ' aria-label="' + label + '" type="datetime-local" value="' + esc(val) + '"></label>'
     );
@@ -291,15 +321,52 @@
 
   function comms() {
     var o = state.on;
-    function action(key, text) {
+    var err = invError();
+
+    function viewBtn(key, text) {
       return '<div><div class="nested-row depth-1 bare action-row" data-setting="' + key + '"><button type="button" class="ghost-btn"><img class="asset-icon" width="16" height="16" alt="" src="' + MAIL + '">' + text + '</button></div></div>';
     }
-    var h = '<div class="settings">';
-    h += block(toggleRow('invitation-email', 'Invitation Email') + (o['invitation-email'] ? action('customise-invitation', 'Customise Invitation Mail') : ''));
-    h += block(toggleRow('reminder-email', 'Reminder Email') + (o['reminder-email'] ? action('customise-reminder', 'Customise Reminder Mail') : ''));
+    function updateBtn(which, enabled) {
+      return '<div><div class="nested-row depth-1 bare action-row" data-setting="update-' + which + '"><button type="button" class="ghost-btn" data-update="' + which + '"' + (enabled ? '' : ' disabled') + '>Update Details</button></div></div>';
+    }
+
+    /* Invitation email */
+    var inv = '';
+    if (o['invitation-email']) {
+      var when = [['immediately', 'Send immediately'], ['schedule', 'Schedule for date & time']].map(function (w) {
+        return '<label class="choice"><input type="radio" data-radio="inv-when" value="' + w[0] + '" name="inv-when"' + (state.invWhen === w[0] ? ' checked' : '') + '><span>' + w[1] + '</span></label>';
+      }).join('');
+      inv += '<div><div class="nested-row depth-1" data-setting="inv-when"><div class="lead"><span class="label-line"><span id="label-inv-when" class="setting-label group-label">When to send</span></span></div>' +
+        '<div class="controls"><div class="radios" role="radiogroup" aria-labelledby="label-inv-when">' + when + '</div></div></div></div>';
+      if (state.invWhen === 'schedule') {
+        inv += '<div><div class="nested-row depth-1 date-row" data-setting="inv-datetime"><div class="lead"><span class="label-line"><span class="setting-label">Invitation date &amp; time</span></span></div>' +
+          '<div class="controls"><div class="field-col">' + dateField('id="control-inv-datetime" data-inv-date', 'Invitation date and time', state.invDateTime, !!err) +
+          (err ? '<p class="field-error" role="alert">' + err + '</p>' : '') + '</div></div></div></div>';
+      }
+      inv += viewBtn('view-invitation', 'View Invitation Mail');
+      inv += updateBtn('inv', invDirty() && !err && (state.invWhen === 'immediately' || !!state.invDateTime));
+    }
+
+    /* Reminder email */
+    var rem = '';
+    if (o['reminder-email']) {
+      var minMin = state.remHours === 0 ? 5 : 0;
+      rem += '<div><div class="nested-row depth-1" data-setting="reminder-offset"><div class="lead"><span class="label-line"><span class="setting-label">Send reminder before exam start</span></span></div>' +
+        '<div class="controls"><div class="time-col"><div class="time-fields">' +
+        '<div class="time-field"><span class="time-label">Hours</span>' + stepper('reminder-hours', 'Reminder hours', state.remHours, 0, 72) + '</div>' +
+        '<div class="time-field"><span class="time-label">Minutes</span>' + stepper('reminder-minutes', 'Reminder minutes', state.remMinutes, minMin, 59) + '</div></div>' +
+        '<p class="helper-text">Sends at ' + fmt(EXAM_START - remTotal() * 60000) + '</p></div></div></div></div>';
+      rem += viewBtn('view-reminder', 'View Reminder Mail');
+      rem += updateBtn('rem', remDirty());
+    }
+
     var link =
       '<div><div class="nested-row depth-1 bare form-row" data-setting="pre-exam-form-link"><div class="form-link' + (state.formLink ? ' has-value' : '') + '"><label class="link-field">' +
       '<input id="control-pre-exam-form-link" inputmode="url" placeholder="Add Form Link" aria-label="Form Link" autocomplete="off" spellcheck="false" type="text" value="' + esc(state.formLink) + '"></label></div></div></div>';
+
+    var h = '<div class="settings">';
+    h += block(toggleRow('invitation-email', 'Invitation Email') + inv);
+    h += block(toggleRow('reminder-email', 'Reminder Email') + rem);
     h += block(toggleRow('pre-exam-form', 'Pre Exam Form') + (o['pre-exam-form'] ? link : ''));
     return h + '</div>';
   }
@@ -385,10 +452,11 @@
     }).join('');
 
     var proc = state.tab === 'tab-proctoring';
+    var titleLine = '<span class="title-line"><h2>' + esc(head[0]) + '</h2>' + info('header:' + state.tab, head[0], true) + '</span>';
     var header = proc
-      ? '<header class="category-header has-toggle"><h2>' + esc(head[0]) + '</h2><span class="switch"><input id="control-proctoring-enabled" data-switch="proctoring-enabled" role="switch" aria-label="Enable Proctoring" aria-checked="' +
+      ? '<header class="category-header has-toggle">' + titleLine + '<span class="switch"><input id="control-proctoring-enabled" data-switch="proctoring-enabled" role="switch" aria-label="Enable Proctoring" aria-checked="' +
         !!state.on['proctoring-enabled'] + '" type="checkbox"' + (state.on['proctoring-enabled'] ? ' checked' : '') + '><span class="switch-ui" aria-hidden="true"><span class="knob">' + CHECK + '</span></span></span></header>'
-      : '<header class="category-header"><h2>' + esc(head[0]) + '</h2><p>' + esc(head[1]) + '</p></header>';
+      : '<header class="category-header">' + titleLine + '</header>';
     var body = PANELS[state.tab]();
     if (proc && !state.on['proctoring-enabled']) body = '<div class="is-off" inert>' + body + '</div>';
 
@@ -441,7 +509,7 @@
   function clamp(v, min, max) { return Math.min(max, Math.max(min, v)); }
 
   function stepperValue(id) {
-    return id === 'warnings-before-termination' ? 'warnings' : id === 'passing-mark' ? 'passingMark' : 'topCandidates';
+    return { 'warnings-before-termination': 'warnings', 'passing-mark': 'passingMark', 'top-candidates': 'topCandidates', 'reminder-hours': 'remHours', 'reminder-minutes': 'remMinutes' }[id];
   }
 
   function applyPreset(name) {
@@ -469,6 +537,12 @@
     var t = e.target;
     var el;
 
+    if ((el = t.closest('[data-update]'))) {
+      if (el.disabled) return;
+      if (el.dataset.update === 'inv') { state.saved.invWhen = state.invWhen; state.saved.invDateTime = state.invDateTime; }
+      else { state.saved.remHours = state.remHours; state.saved.remMinutes = state.remMinutes; }
+      return render();
+    }
     if (t.closest('[data-collapse]')) { state.collapsed = !state.collapsed; hideTip(); return render('x-none'); }
     if ((el = t.closest('[role=tab]'))) { state.tab = el.id; state.menuOpen = false; return render(); }
     if ((el = t.closest('.template'))) { applyPreset(el.dataset.template); return render(); }
@@ -478,7 +552,7 @@
     if ((el = t.closest('[data-step]'))) {
       var id = el.dataset.step, input = document.getElementById('control-' + id);
       var v = clamp((parseInt(input.value, 10) || 0) + +el.dataset.dir, +input.dataset.min, +input.dataset.max);
-      state[stepperValue(id)] = v;
+      state[stepperValue(id)] = v; normalizeReminder();
       return render();
     }
 
@@ -500,16 +574,17 @@
     var t = e.target;
     if (t.dataset.switch) { state.on[t.dataset.switch] = t.checked; return render(t.id); }
     if (t.dataset.radio) {
-      var m = { 'shortlisting-criteria': 'shortlist', 'submission-report': 'report', 'stats-visibility': 'stats', 'pin-type': 'pinType' };
+      var m = { 'shortlisting-criteria': 'shortlist', 'submission-report': 'report', 'stats-visibility': 'stats', 'pin-type': 'pinType', 'inv-when': 'invWhen' };
       state[m[t.dataset.radio]] = t.value;
       return render();
     }
     if (t.dataset.event) { state.events[t.dataset.event] = t.checked; if (!state.events.start && !state.events.end) state.menuOpen = false; return render(); }
     if (t.dataset.stepper) {
       var v = clamp(parseInt(t.value, 10) || +t.dataset.min, +t.dataset.min, +t.dataset.max);
-      state[stepperValue(t.dataset.stepper)] = v;
+      state[stepperValue(t.dataset.stepper)] = v; normalizeReminder();
       return render();
     }
+    if (t.dataset.invDate !== undefined) { state.invDateTime = t.value; return render(); }
     if (t.dataset.date) { state[t.dataset.date === 'start' ? 'reviewStart' : 'reviewEnd'] = t.value; return render(); }
   });
 
