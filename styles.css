@@ -266,3 +266,7 @@ button{cursor:pointer}
 .saved-note{display:inline-flex;align-items:center;gap:8px;margin:0;color:#15803d;font-size:14px;font-weight:600;line-height:20px;min-height:40px}
 .panel-actions.is-success{animation:saved-in .2s ease}
 @keyframes saved-in{from{opacity:0}to{opacity:1}}
+
+/* reminder offset uses the shared stepper (same as Warnings Before Termination) */
+.duration-steppers{display:inline-flex;align-items:center;gap:12px}
+.duration-steppers .stepper input{flex-basis:48px;width:48px}

@@ -367,15 +367,12 @@
     var rem = '';
     if (o['reminder-email']) {
       var minMin = state.remHours === 0 ? 5 : 0;
-      function seg(id, label, val, min, max, unit) {
-        return '<label class="duration-seg"><input id="control-' + id + '" data-stepper="' + id + '" data-min="' + min + '" data-max="' + max + '" inputmode="numeric" pattern="[0-9]*" maxlength="2" spellcheck="false" autocomplete="off" aria-label="' + label +
-          '" aria-valuemin="' + min + '" aria-valuemax="' + max + '" aria-valuenow="' + val + '" value="' + val + '"><span>' + unit + '</span></label>';
-      }
       rem += '<div><div class="nested-row depth-1" data-setting="reminder-offset"><div class="lead"><span class="label-line"><span class="setting-label">Send reminder before exam start</span></span></div>' +
         '<div class="controls"><div class="time-col"><p class="helper-text">Sends at ' + fmtShort(EXAM_START - remTotal() * 60000) + '</p>' +
-        '<div class="duration" role="group" aria-label="Send reminder before exam start">' +
-        seg('reminder-hours', 'Reminder hours', state.remHours, 0, 72, 'hr') + '<span class="duration-sep" aria-hidden="true"></span>' +
-        seg('reminder-minutes', 'Reminder minutes', state.remMinutes, minMin, 59, 'min') + '</div></div></div></div></div>';
+        '<div class="duration-steppers" role="group" aria-label="Send reminder before exam start">' +
+        stepper('reminder-hours', 'Reminder hours', state.remHours, 0, 72, 'hr') +
+        stepper('reminder-minutes', 'Reminder minutes', state.remMinutes, minMin, 59, 'min') +
+        '</div></div></div></div></div>';
       rem += actions('rem', 'View Reminder Mail');
     }
 
@@ -477,7 +474,10 @@
   /* ---------- render ---------- */
   var app = document.getElementById('app');
 
+  var lastTab = null;
   function render(keepFocusId) {
+    var prevMain = app.querySelector('.main');
+    var prevScroll = prevMain && lastTab === state.tab ? prevMain.scrollTop : 0;
     var head = HEADERS[state.tab];
     var nav = TABS.map(function (t) {
       var sel = state.tab === t[0];
@@ -502,10 +502,15 @@
       '<div class="main"><div id="advanced-panel" role="tabpanel" aria-labelledby="' + state.tab + '"><div class="panel-height-inner">' +
       header + body + '</div></div></div></form>';
 
+    var main = app.querySelector('.main');
+    if (main) main.scrollTop = prevScroll;
+    lastTab = state.tab;
+    if (typeof syncStuck === 'function') syncStuck();
+
     if (keepFocusId) {
       var el = document.getElementById(keepFocusId);
       if (el) {
-        el.focus();
+        el.focus({ preventScroll: true });
         if (el.setSelectionRange && el.type === 'text') { var n = el.value.length; el.setSelectionRange(n, n); }
       }
     }
@@ -633,7 +638,7 @@
   app.addEventListener('input', function (e) {
     var t = e.target;
     if (t.dataset && t.dataset.stepper) {
-      var clean = t.value.replace(/\D/g, '').slice(0, 2);
+      var clean = t.value.replace(/\D/g, '').slice(0, String(t.dataset.max || '99').length);
       if (clean !== t.value) t.value = clean;
       return;
     }
