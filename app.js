@@ -71,7 +71,6 @@
   var state = {
     tab: 'tab-proctoring',
     template: 'Standard',
-    tip: null,
     on: {
       'camera-monitoring': true, 'auto-terminate-camera': false, 'audio-monitoring': true,
       'screen-monitoring': true, 'face-verification': true, 'electronic-device-detection': false,
@@ -142,13 +141,10 @@
   function info(key, name, always) {
     var tip = TIPS[key];
     if (!tip) return '';
-    var open = state.tip === key;
     return (
       '<span class="info-wrap' + (always ? ' always-show' : '') + '" data-tooltip-root>' +
       '<button type="button" class="info-btn" data-tip="' + esc(key) + '" aria-label="More information about ' + esc(name) +
-      '" aria-expanded="' + open + '"' + (open ? ' aria-describedby="tip-' + slug(key) + '"' : '') + '><span class="info-mark" aria-hidden="true"></span></button>' +
-      (open ? '<span role="tooltip" id="tip-' + slug(key) + '" class="tooltip" data-placement="right">' + esc(tip).replace(/\n/g, '<br>') + '</span>' : '') +
-      '</span>'
+      '" aria-expanded="false"><span class="info-mark" aria-hidden="true"></span></button></span>'
     );
   }
 
@@ -400,14 +396,33 @@
         if (el.setSelectionRange && el.type === 'text') { var n = el.value.length; el.setSelectionRange(n, n); }
       }
     }
-    positionTooltip();
   }
 
-  function positionTooltip() {
-    var tip = app.querySelector('.tooltip');
-    if (!tip) return;
-    var r = tip.getBoundingClientRect();
-    if (r.right > window.innerWidth - 8) tip.setAttribute('data-placement', 'left');
+  /* tooltips are built straight in the DOM so hover never triggers a re-render */
+  function hideTip() {
+    var t = app.querySelector('.tooltip');
+    if (t) {
+      var btn = t.parentNode.querySelector('.info-btn');
+      btn.setAttribute('aria-expanded', 'false');
+      btn.removeAttribute('aria-describedby');
+      t.remove();
+    }
+  }
+
+  function showTip(btn) {
+    var key = btn.dataset.tip;
+    if (btn.getAttribute('aria-expanded') === 'true') return;
+    hideTip();
+    var tip = document.createElement('span');
+    tip.className = 'tooltip';
+    tip.setAttribute('role', 'tooltip');
+    tip.id = 'tip-' + slug(key);
+    tip.setAttribute('data-placement', 'right');
+    tip.innerHTML = esc(TIPS[key]).replace(/\n/g, '<br>');
+    btn.parentNode.appendChild(tip);
+    btn.setAttribute('aria-expanded', 'true');
+    btn.setAttribute('aria-describedby', tip.id);
+    if (tip.getBoundingClientRect().right > window.innerWidth - 8) tip.setAttribute('data-placement', 'left');
   }
 
   /* ---------- behaviour ---------- */
@@ -442,14 +457,10 @@
     var t = e.target;
     var el;
 
-    if ((el = t.closest('[role=tab]'))) { state.tab = el.id; state.tip = null; state.menuOpen = false; return render(); }
-    if ((el = t.closest('.template'))) { applyPreset(el.dataset.template); state.tip = null; return render(); }
+    if ((el = t.closest('[role=tab]'))) { state.tab = el.id; state.menuOpen = false; return render(); }
+    if ((el = t.closest('.template'))) { applyPreset(el.dataset.template); return render(); }
 
-    if ((el = t.closest('.info-btn'))) {
-      var key = el.dataset.tip;
-      state.tip = state.tip === key ? null : key;
-      return render();
-    }
+    if ((el = t.closest('.info-btn'))) { showTip(el); return; }
 
     if ((el = t.closest('[data-step]'))) {
       var id = el.dataset.step, input = document.getElementById('control-' + id);
@@ -469,10 +480,7 @@
       return render();
     }
 
-    if (state.tip || state.menuOpen) {
-      if (!t.closest('.info-wrap') && !t.closest('.menu')) { state.tip = null; state.menuOpen = false; render(); }
-    }
-    return;
+    if (state.menuOpen && !t.closest('.menu')) { state.menuOpen = false; render(); }
   });
 
   app.addEventListener('change', function (e) {
@@ -507,11 +515,27 @@
 
   app.addEventListener('keydown', function (e) {
     if (e.key === 'Enter' && e.target.id === 'control-ip-addresses') { e.preventDefault(); addIp(); render('control-ip-addresses'); }
-    if (e.key === 'Escape' && (state.tip || state.menuOpen)) { state.tip = null; state.menuOpen = false; render(); }
+    if (e.key === 'Escape') { hideTip(); if (state.menuOpen) { state.menuOpen = false; render(); } }
   });
 
   document.addEventListener('click', function (e) {
-    if (e.composedPath().indexOf(app) === -1 && (state.tip || state.menuOpen)) { state.tip = null; state.menuOpen = false; render(); }
+    if (e.composedPath().indexOf(app) === -1 && state.menuOpen) { state.menuOpen = false; render(); }
+  });
+
+  app.addEventListener('mouseover', function (e) {
+    var b = e.target.closest && e.target.closest('.info-btn');
+    if (b) showTip(b);
+  });
+  app.addEventListener('mouseout', function (e) {
+    var w = e.target.closest && e.target.closest('.info-wrap');
+    if (w && !w.contains(e.relatedTarget)) hideTip();
+  });
+  app.addEventListener('focusin', function (e) {
+    var b = e.target.closest && e.target.closest('.info-btn');
+    if (b) showTip(b);
+  });
+  app.addEventListener('focusout', function (e) {
+    if (e.target.closest && e.target.closest('.info-btn')) hideTip();
   });
 
   render();
