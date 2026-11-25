@@ -261,3 +261,8 @@ button{cursor:pointer}
 /* Proctoring templates stay pinned to the top of the scrolling panel */
 .advanced-card .templates{position:sticky;top:0;z-index:3;margin:0 -22px 18px;padding:12px 22px;background:#fff;border-bottom:1px solid transparent;transition:border-color .15s ease}
 .advanced-card .templates.is-stuck{border-bottom-color:var(--border)}
+
+/* 3-second success confirmation after saving */
+.saved-note{display:inline-flex;align-items:center;gap:8px;margin:0;color:#15803d;font-size:14px;font-weight:600;line-height:20px;min-height:40px}
+.panel-actions.is-success{animation:saved-in .2s ease}
+@keyframes saved-in{from{opacity:0}to{opacity:1}}

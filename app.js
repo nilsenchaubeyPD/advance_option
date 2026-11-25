@@ -176,6 +176,13 @@
     if (remTotal() < 5) state.remMinutes = 5;
   }
   function invDirty() { return state.invWhen !== state.saved.invWhen || state.invDateTime !== state.saved.invDateTime; }
+  function dirtyNames() {
+    var names = [];
+    if (state.on['invitation-email'] && invDirty()) names.push('Invitation Email');
+    if (state.on['reminder-email'] && remDirty()) names.push('Reminder Email');
+    return names;
+  }
+  var flashTimer = null;
   function remDirty() { return state.remHours !== state.saved.remHours || state.remMinutes !== state.saved.remMinutes; }
   function slug(s) {
     return String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -387,11 +394,12 @@
     var dirty = (invOn && invDirty()) || (remOn && remDirty());
     var valid = !(invOn && (err || (state.invWhen === 'schedule' && !state.invDateTime)));
     if (dirty) {
-      var names = [];
-      if (invOn && invDirty()) names.push('Invitation Email');
-      if (remOn && remDirty()) names.push('Reminder Email');
-      h += '<div class="panel-actions"><p class="unsaved-note">Unsaved changes in ' + names.join(' and ') + '</p>' +
+      h += '<div class="panel-actions"><p class="unsaved-note">Unsaved changes in ' + dirtyNames().join(' and ') + '</p>' +
         '<button type="button" class="primary-btn" data-update' + (valid ? '' : ' disabled') + '>Update Email Settings</button></div>';
+    } else if (state.flash) {
+      h += '<div class="panel-actions is-success" role="status" aria-live="polite"><p class="saved-note">' +
+        '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="currentColor"/><path d="M5 8.2 7 10.2 11 6" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+        esc(state.flash) + '</p></div>';
     }
     return h;
   }
@@ -570,7 +578,11 @@
 
     if ((el = t.closest('[data-update]'))) {
       if (el.disabled) return;
+      var names = dirtyNames();
       state.saved = { invWhen: state.invWhen, invDateTime: state.invDateTime, remHours: state.remHours, remMinutes: state.remMinutes };
+      state.flash = names.join(' and ') + ' settings updated';
+      clearTimeout(flashTimer);
+      flashTimer = setTimeout(function () { state.flash = null; if (state.tab === 'tab-comms') render(); }, 3000);
       return render();
     }
     if (t.closest('[data-collapse]')) { state.collapsed = !state.collapsed; hideTip(); return render('x-none'); }
