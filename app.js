@@ -99,8 +99,10 @@
     invWhen: 'immediately',
     invDateTime: '',
     remHours: 0,
-    remMinutes: 5,
-    saved: { invWhen: 'immediately', invDateTime: '', remHours: 0, remMinutes: 5 },
+    remMinutes: 15,
+    remPreset: '15',
+    remMenuOpen: false,
+    saved: { invWhen: 'immediately', invDateTime: '', remHours: 0, remMinutes: 15, remPreset: '15' },
     events: { start: false, end: false },
     services: [],
     menuOpen: false
@@ -183,7 +185,9 @@
     return names;
   }
   var flashTimer = null;
-  function remDirty() { return state.remHours !== state.saved.remHours || state.remMinutes !== state.saved.remMinutes; }
+  var REM_PRESETS = [['15', '15 minutes', 0, 15], ['30', '30 minutes', 0, 30], ['45', '45 minutes', 0, 45], ['60', '1 hour', 1, 0], ['custom', 'Custom']];
+  function remPresetLabel(k) { for (var i = 0; i < REM_PRESETS.length; i++) if (REM_PRESETS[i][0] === k) return REM_PRESETS[i][1]; return ''; }
+  function remDirty() { return state.remPreset !== state.saved.remPreset || state.remHours !== state.saved.remHours || state.remMinutes !== state.saved.remMinutes; }
   function slug(s) {
     return String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   }
@@ -367,12 +371,24 @@
     var rem = '';
     if (o['reminder-email']) {
       var minMin = state.remHours === 0 ? 5 : 0;
-      rem += '<div><div class="nested-row depth-1" data-setting="reminder-offset"><div class="lead"><span class="label-line"><span class="setting-label">Send reminder before exam start</span></span></div>' +
+      var list = '';
+      if (state.remMenuOpen) {
+        list = '<ul class="menu-list" role="listbox" aria-label="Reminder time">' + REM_PRESETS.map(function (p) {
+          var sel = state.remPreset === p[0];
+          return '<li><button type="button" class="menu-option" role="option" data-rem-option="' + p[0] + '" aria-selected="' + sel + '"><span>' + p[1] + '</span>' + (sel ? TICK : '') + '</button></li>';
+        }).join('') + '</ul>';
+      }
+      rem += '<div><div class="nested-row depth-1" data-setting="reminder-offset"><div class="lead"><span class="label-line"><span id="label-reminder-offset" class="setting-label">Send reminder before exam start</span></span></div>' +
         '<div class="controls"><div class="time-col"><p class="helper-text">Sends at ' + fmtShort(EXAM_START - remTotal() * 60000) + '</p>' +
-        '<div class="duration-steppers" role="group" aria-label="Send reminder before exam start">' +
-        stepper('reminder-hours', 'Reminder hours', state.remHours, 0, 72, 'hr') +
-        stepper('reminder-minutes', 'Reminder minutes', state.remMinutes, minMin, 59, 'min') +
-        '</div></div></div></div></div>';
+        '<div class="menu rem-menu"><button type="button" class="menu-trigger" data-rem-menu aria-haspopup="listbox" aria-expanded="' + state.remMenuOpen + '" aria-labelledby="label-reminder-offset">' +
+        '<span>' + remPresetLabel(state.remPreset) + '</span>' + CHEV_DOWN + '</button>' + list + '</div></div></div></div></div>';
+      if (state.remPreset === 'custom') {
+        rem += '<div><div class="nested-row depth-2" data-setting="reminder-custom"><div class="lead"><span class="label-line"><span class="setting-label">Custom time</span></span></div>' +
+          '<div class="controls"><div class="duration-steppers" role="group" aria-label="Custom reminder time">' +
+          stepper('reminder-hours', 'Reminder hours', state.remHours, 0, 72, 'hr') +
+          stepper('reminder-minutes', 'Reminder minutes', state.remMinutes, minMin, 59, 'min') +
+          '</div></div></div></div>';
+      }
       rem += actions('rem', 'View Reminder Mail');
     }
 
@@ -506,6 +522,10 @@
     if (main) main.scrollTop = prevScroll;
     lastTab = state.tab;
     if (typeof syncStuck === 'function') syncStuck();
+    // open dropdowns upward when the panel has no room below
+    if (main) app.querySelectorAll('.menu-list').forEach(function (list) {
+      if (list.getBoundingClientRect().bottom > main.getBoundingClientRect().bottom - 4) list.classList.add('is-up');
+    });
 
     if (keepFocusId) {
       var el = document.getElementById(keepFocusId);
@@ -584,14 +604,22 @@
     if ((el = t.closest('[data-update]'))) {
       if (el.disabled) return;
       var names = dirtyNames();
-      state.saved = { invWhen: state.invWhen, invDateTime: state.invDateTime, remHours: state.remHours, remMinutes: state.remMinutes };
+      state.saved = { invWhen: state.invWhen, invDateTime: state.invDateTime, remHours: state.remHours, remMinutes: state.remMinutes, remPreset: state.remPreset };
       state.flash = names.join(' and ') + ' settings updated';
       clearTimeout(flashTimer);
       flashTimer = setTimeout(function () { state.flash = null; if (state.tab === 'tab-comms') render(); }, 3000);
       return render();
     }
+    if (t.closest('[data-rem-menu]')) { state.remMenuOpen = !state.remMenuOpen; return render(); }
+    if ((el = t.closest('[data-rem-option]'))) {
+      var k = el.dataset.remOption;
+      state.remPreset = k;
+      REM_PRESETS.forEach(function (p) { if (p[0] === k && k !== 'custom') { state.remHours = p[2]; state.remMinutes = p[3]; } });
+      state.remMenuOpen = false;
+      return render();
+    }
     if (t.closest('[data-collapse]')) { state.collapsed = !state.collapsed; hideTip(); return render('x-none'); }
-    if ((el = t.closest('[role=tab]'))) { state.tab = el.id; state.menuOpen = false; return render(); }
+    if ((el = t.closest('[role=tab]'))) { state.tab = el.id; state.menuOpen = false; state.remMenuOpen = false; return render(); }
     if ((el = t.closest('.template'))) { applyPreset(el.dataset.template); return render(); }
 
     if ((el = t.closest('.info-btn'))) { showTip(el); return; }
@@ -614,7 +642,7 @@
       return render();
     }
 
-    if (state.menuOpen && !t.closest('.menu')) { state.menuOpen = false; render(); }
+    if ((state.menuOpen || state.remMenuOpen) && !t.closest('.menu')) { state.menuOpen = false; state.remMenuOpen = false; render(); }
   });
 
   app.addEventListener('change', function (e) {
@@ -663,11 +691,11 @@
       return render(inp.id);
     }
     if (e.key === 'Enter' && e.target.id === 'control-ip-addresses') { e.preventDefault(); addIp(); render('control-ip-addresses'); }
-    if (e.key === 'Escape') { hideTip(); if (state.menuOpen) { state.menuOpen = false; render(); } }
+    if (e.key === 'Escape') { hideTip(); if (state.menuOpen || state.remMenuOpen) { state.menuOpen = false; state.remMenuOpen = false; render(); } }
   });
 
   document.addEventListener('click', function (e) {
-    if (e.composedPath().indexOf(app) === -1 && state.menuOpen) { state.menuOpen = false; render(); }
+    if (e.composedPath().indexOf(app) === -1 && (state.menuOpen || state.remMenuOpen)) { state.menuOpen = false; state.remMenuOpen = false; render(); }
   });
 
   // divider under the pinned templates only once they are stuck

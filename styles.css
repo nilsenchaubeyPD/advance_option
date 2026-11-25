@@ -270,3 +270,7 @@ button{cursor:pointer}
 /* reminder offset uses the shared stepper (same as Warnings Before Termination) */
 .duration-steppers{display:inline-flex;align-items:center;gap:12px}
 .duration-steppers .stepper input{flex-basis:48px;width:48px}
+
+/* reminder time dropdown */
+.rem-menu{width:160px}
+.menu-list.is-up{top:auto;bottom:calc(100% + 4px)}
