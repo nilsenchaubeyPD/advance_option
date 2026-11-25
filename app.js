@@ -330,10 +330,9 @@
     var o = state.on;
     var err = invError();
 
-    function actions(which, text, dirty, valid) {
+    function actions(which, text) {
       return '<div><div class="nested-row depth-1 bare action-row" data-setting="actions-' + which + '"><div class="action-group">' +
         '<button type="button" class="ghost-btn"><img class="asset-icon" width="16" height="16" alt="" src="' + MAIL + '">' + text + '</button>' +
-        (dirty ? '<button type="button" class="tertiary-btn" data-update="' + which + '"' + (valid ? '' : ' disabled') + '>Update Details</button>' : '') +
         '</div></div></div>';
     }
 
@@ -350,7 +349,7 @@
           '<div class="controls"><div class="field-col">' + dateField('id="control-inv-datetime" data-inv-date', 'Invitation date and time', state.invDateTime, !!err) +
           (err ? '<p class="field-error" role="alert">' + err + '</p>' : '') + '</div></div></div></div>';
       }
-      inv += actions('inv', 'View Invitation Mail', invDirty(), !err && (state.invWhen === 'immediately' || !!state.invDateTime));
+      inv += actions('inv', 'View Invitation Mail');
     }
 
     /* Reminder email */
@@ -366,7 +365,7 @@
         '<div class="duration" role="group" aria-label="Send reminder before exam start">' +
         seg('reminder-hours', 'Reminder hours', state.remHours, 0, 72, 'hr') + '<span class="duration-sep" aria-hidden="true"></span>' +
         seg('reminder-minutes', 'Reminder minutes', state.remMinutes, minMin, 59, 'min') + '</div></div></div></div></div>';
-      rem += actions('rem', 'View Reminder Mail', remDirty(), true);
+      rem += actions('rem', 'View Reminder Mail');
     }
 
     var link =
@@ -377,7 +376,16 @@
     h += block(toggleRow('invitation-email', 'Invitation Email') + inv);
     h += block(toggleRow('reminder-email', 'Reminder Email') + rem);
     h += block(toggleRow('pre-exam-form', 'Pre Exam Form') + (o['pre-exam-form'] ? link : ''));
-    return h + '</div>';
+    h += '</div>';
+
+    // one shared action for both emails: shown only when something changed
+    var invOn = !!o['invitation-email'], remOn = !!o['reminder-email'];
+    var dirty = (invOn && invDirty()) || (remOn && remDirty());
+    var valid = !(invOn && (err || (state.invWhen === 'schedule' && !state.invDateTime)));
+    if (dirty) {
+      h += '<div class="panel-actions"><button type="button" class="tertiary-btn" data-update' + (valid ? '' : ' disabled') + '>Update Details</button></div>';
+    }
+    return h;
   }
 
   function results() {
@@ -548,8 +556,7 @@
 
     if ((el = t.closest('[data-update]'))) {
       if (el.disabled) return;
-      if (el.dataset.update === 'inv') { state.saved.invWhen = state.invWhen; state.saved.invDateTime = state.invDateTime; }
-      else { state.saved.remHours = state.remHours; state.saved.remMinutes = state.remMinutes; }
+      state.saved = { invWhen: state.invWhen, invDateTime: state.invDateTime, remHours: state.remHours, remMinutes: state.remMinutes };
       return render();
     }
     if (t.closest('[data-collapse]')) { state.collapsed = !state.collapsed; hideTip(); return render('x-none'); }

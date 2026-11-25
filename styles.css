@@ -240,3 +240,6 @@ button{cursor:pointer}
 .duration-seg input{width:2ch;min-width:0;padding:0;border:0;background:transparent;color:var(--text);font-size:14px;font-weight:600;text-align:center}
 .duration-seg input:focus,.duration-seg input:focus-visible{outline:none}
 .duration-seg span{color:var(--text-secondary);font-size:14px}
+
+/* one shared Update Details action at the bottom of the Communications panel */
+.panel-actions{display:flex;justify-content:flex-end;padding:8px 8px 0}
