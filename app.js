@@ -642,11 +642,20 @@
     if (t.dataset.date) { state[t.dataset.date === 'start' ? 'reviewStart' : 'reviewEnd'] = t.value; return render(); }
   });
 
+  app.addEventListener('beforeinput', function (e) {
+    var t = e.target;
+    if (t.dataset && t.dataset.stepper) t._prev = t.value;
+  });
+
   app.addEventListener('input', function (e) {
     var t = e.target;
     if (t.dataset && t.dataset.stepper) {
-      var clean = t.value.replace(/\D/g, '').slice(0, String(t.dataset.max || '99').length);
-      if (clean !== t.value) t.value = clean;
+      var clean = t.value.replace(/\D/g, '');
+      // a lone 0 is a placeholder: typing on either side of it replaces it (0 -> 9, not 90 or 09)
+      if (t._prev === '0' && clean.length > 1) clean = clean.replace('0', '');
+      clean = clean.replace(/^0+(?=\d)/, '').slice(0, String(t.dataset.max || '99').length);
+      if (clean !== t.value) { t.value = clean; t.setSelectionRange(clean.length, clean.length); }
+      t._prev = clean;
       return;
     }
     if (t.id === 'control-ip-addresses') {
