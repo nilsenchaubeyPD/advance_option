@@ -653,6 +653,14 @@
     if (e.composedPath().indexOf(app) === -1 && state.menuOpen) { state.menuOpen = false; render(); }
   });
 
+  // divider under the pinned templates only once they are stuck
+  function syncStuck() {
+    var main = app.querySelector('.main'), tpl = app.querySelector('.templates');
+    if (!main || !tpl) return;
+    tpl.classList.toggle('is-stuck', main.scrollTop > 0 && tpl.getBoundingClientRect().top - main.getBoundingClientRect().top <= 1);
+  }
+  app.addEventListener('scroll', syncStuck, true);
+
   app.addEventListener('mouseover', function (e) {
     var b = e.target.closest && e.target.closest('.info-btn');
     if (b) showTip(b);
