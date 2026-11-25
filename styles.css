@@ -218,8 +218,19 @@ button{cursor:pointer}
 .field-error{margin:0;color:#ea580c;font-size:12px;line-height:16px}
 .date-field.is-invalid{border-color:#ea580c;border-width:1.5px}
 .time-col{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
-.time-fields{display:flex;gap:16px}
-.time-field{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
-.time-label{color:var(--text-secondary);font-size:12px;line-height:16px}
 .helper-text{margin:0;color:var(--text-secondary);font-size:12px;line-height:16px;text-align:right}
-.ghost-btn:disabled{opacity:.5;cursor:not-allowed;background:#fff}
+
+/* actions: secondary "View mail" + tertiary "Update Details" on one row */
+.action-group{display:flex;align-items:center;justify-content:flex-end;gap:4px}
+.tertiary-btn{display:inline-flex;align-items:center;height:32px;padding:0 10px;border:0;border-radius:6px;background:transparent;color:var(--accent);font-size:14px;font-weight:600}
+.tertiary-btn:hover{background:var(--accent-soft)}
+.tertiary-btn:disabled{color:#9ca3af;background:transparent;cursor:not-allowed}
+
+/* reminder offset: one compact duration field (hr | min) */
+.duration{display:inline-flex;align-items:center;height:40px;overflow:hidden;background:#fff;border:1px solid var(--border-strong);border-radius:8px}
+.duration:focus-within{border-color:var(--accent);box-shadow:0 0 0 .5px var(--accent)}
+.duration-seg{display:inline-flex;align-items:center;gap:6px;height:100%;padding:0 12px;cursor:text}
+.duration-seg input{width:28px;padding:0;border:0;background:transparent;color:var(--text);font-size:14px;font-weight:600;text-align:right}
+.duration-seg input:focus,.duration-seg input:focus-visible{outline:none}
+.duration-seg span{color:var(--text-secondary);font-size:14px}
+.duration-sep{align-self:stretch;width:1px;background:var(--border)}
