@@ -186,3 +186,18 @@ button{cursor:pointer}
 @media(max-width:860px){.page{width:min(100% - 24px,1080px);margin-top:16px}.shell{grid-template-columns:1fr}.side{border-right:0;border-bottom:1px solid var(--border);padding-bottom:12px}.nav{display:flex;flex-wrap:wrap;gap:4px}.nav-btn{width:auto;white-space:normal}.templates{grid-template-columns:1fr}}
 @media(max-width:640px){.row,.nested-row{grid-template-columns:1fr;justify-items:start}.controls,.radios,.checks,.segments{justify-content:flex-start}.controls{width:100%;justify-self:stretch}.text-input{width:100%}.ip-entry{flex-direction:column;align-items:stretch}.ip-field,.ip-add{width:100%}.date-range{justify-content:flex-start}.date-field{width:100%;min-width:0}.menu{width:100%}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+
+/* Card header bar with collapse button */
+.advanced-card{overflow:hidden}
+.card-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border)}
+.card-bar .section-title{margin:0;font-size:16px;line-height:24px;font-weight:650;color:var(--text)}
+.collapse-btn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;border:1px solid var(--border-strong);border-radius:6px;background:#fff;color:var(--text)}
+.collapse-btn:hover{background:#f1f5f9}
+.collapse-btn svg{transition:transform .2s ease}
+.shell[hidden]{display:none}
+.advanced-card .side{padding:16px 14px 20px 18px}
+.advanced-card .main{max-height:640px;overflow-y:auto;padding-top:0}
+.shell.is-row-hover .category-header.has-toggle{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 16px;padding:18px 0 14px}
+.category-header.has-toggle h2{margin:0}
+.is-off{opacity:.5;pointer-events:none;user-select:none}
+.shell.is-row-hover .category-header.has-toggle h2{margin:0}

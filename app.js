@@ -70,8 +70,10 @@
   /* ---------- state ---------- */
   var state = {
     tab: 'tab-proctoring',
+    collapsed: false,
     template: 'Standard',
     on: {
+      'proctoring-enabled': true,
       'camera-monitoring': true, 'auto-terminate-camera': false, 'audio-monitoring': true,
       'screen-monitoring': true, 'face-verification': true, 'electronic-device-detection': false,
       'auto-terminate-on-violations': true, 'tab-monitoring': true, 'attempt-on-mobile': false,
@@ -382,12 +384,22 @@
       return '<button id="' + t[0] + '" type="button" role="tab" class="nav-btn" aria-selected="' + sel + '" aria-controls="advanced-panel" tabindex="' + (sel ? 0 : -1) + '">' + esc(t[1]) + '</button>';
     }).join('');
 
+    var proc = state.tab === 'tab-proctoring';
+    var header = proc
+      ? '<header class="category-header has-toggle"><h2>' + esc(head[0]) + '</h2><span class="switch"><input id="control-proctoring-enabled" data-switch="proctoring-enabled" role="switch" aria-label="Enable Proctoring" aria-checked="' +
+        !!state.on['proctoring-enabled'] + '" type="checkbox"' + (state.on['proctoring-enabled'] ? ' checked' : '') + '><span class="switch-ui" aria-hidden="true"><span class="knob">' + CHECK + '</span></span></span></header>'
+      : '<header class="category-header"><h2>' + esc(head[0]) + '</h2><p>' + esc(head[1]) + '</p></header>';
+    var body = PANELS[state.tab]();
+    if (proc && !state.on['proctoring-enabled']) body = '<div class="is-off" inert>' + body + '</div>';
+
     app.innerHTML =
-      '<form class="shell is-row-hover" aria-label="Advanced options" onsubmit="return false">' +
-      '<aside class="side"><h1 class="section-title">Advanced Options</h1><div class="nav" role="tablist" aria-orientation="vertical" aria-label="Advanced options">' + nav + '</div></aside>' +
+      '<div class="card-bar"><h1 class="section-title">Advanced Options</h1>' +
+      '<button type="button" class="collapse-btn" data-collapse aria-expanded="' + !state.collapsed + '" aria-controls="advanced-form" aria-label="' + (state.collapsed ? 'Expand' : 'Collapse') + ' Advanced Options">' +
+      '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"' + (state.collapsed ? ' style="transform:rotate(180deg)"' : '') + '><path d="M4 10l4-4 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>' +
+      '<form id="advanced-form" class="shell is-row-hover" aria-label="Advanced options" onsubmit="return false"' + (state.collapsed ? ' hidden' : '') + '>' +
+      '<aside class="side"><div class="nav" role="tablist" aria-orientation="vertical" aria-label="Advanced options">' + nav + '</div></aside>' +
       '<div class="main"><div id="advanced-panel" role="tabpanel" aria-labelledby="' + state.tab + '"><div class="panel-height-inner">' +
-      '<header class="category-header"><h2>' + esc(head[0]) + '</h2><p>' + esc(head[1]) + '</p></header>' + PANELS[state.tab]() +
-      '</div></div></div></form>';
+      header + body + '</div></div></div></form>';
 
     if (keepFocusId) {
       var el = document.getElementById(keepFocusId);
@@ -457,6 +469,7 @@
     var t = e.target;
     var el;
 
+    if (t.closest('[data-collapse]')) { state.collapsed = !state.collapsed; hideTip(); return render('x-none'); }
     if ((el = t.closest('[role=tab]'))) { state.tab = el.id; state.menuOpen = false; return render(); }
     if ((el = t.closest('.template'))) { applyPreset(el.dataset.template); return render(); }
 
