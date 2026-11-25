@@ -242,7 +242,12 @@ button{cursor:pointer}
 .duration-seg span{color:var(--text-secondary);font-size:14px}
 
 /* one shared Update Details action at the bottom of the Communications panel */
-.panel-actions{display:flex;justify-content:flex-end;padding:8px 8px 0}
+.panel-actions{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px 16px;margin-top:8px;padding:16px 8px 8px;border-top:1px solid var(--border)}
 
 /* whole date field opens the native picker */
 .date-field input[type=datetime-local]::-webkit-calendar-picker-indicator{position:absolute;top:0;left:0;width:100%;height:100%;margin:0;padding:0;cursor:pointer}
+
+.unsaved-note{margin:0;color:var(--text-secondary);font-size:14px;line-height:20px}
+.primary-btn{display:inline-flex;align-items:center;justify-content:center;height:40px;padding:0 18px;border:0;border-radius:8px;background:var(--accent);color:#fff;font-size:14px;font-weight:600}
+.primary-btn:hover{filter:brightness(.94)}
+.primary-btn:disabled{background:#e5e7eb;color:#9ca3af;cursor:not-allowed;filter:none}

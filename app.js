@@ -387,7 +387,11 @@
     var dirty = (invOn && invDirty()) || (remOn && remDirty());
     var valid = !(invOn && (err || (state.invWhen === 'schedule' && !state.invDateTime)));
     if (dirty) {
-      h += '<div class="panel-actions"><button type="button" class="tertiary-btn" data-update' + (valid ? '' : ' disabled') + '>Update Details</button></div>';
+      var names = [];
+      if (invOn && invDirty()) names.push('Invitation Email');
+      if (remOn && remDirty()) names.push('Reminder Email');
+      h += '<div class="panel-actions"><p class="unsaved-note">Unsaved changes in ' + names.join(' and ') + '</p>' +
+        '<button type="button" class="primary-btn" data-update' + (valid ? '' : ' disabled') + '>Update Email Settings</button></div>';
     }
     return h;
   }
