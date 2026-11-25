@@ -235,7 +235,7 @@ button{cursor:pointer}
 
 /* reminder offset: helper on the left, two equal centred boxes on the right */
 .time-col{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px 16px}
-.helper-text{margin:0;color:var(--text-secondary);font-size:12px;line-height:16px;text-align:right}
+.helper-text{margin:0;color:var(--text-secondary);font-size:14px;line-height:20px;text-align:right}
 .duration-seg{display:flex;flex:0 0 76px;align-items:center;justify-content:center;gap:4px;width:76px;height:100%;padding:0;cursor:text}
 .duration-seg input{width:2ch;min-width:0;padding:0;border:0;background:transparent;color:var(--text);font-size:14px;font-weight:600;text-align:center}
 .duration-seg input:focus,.duration-seg input:focus-visible{outline:none}
