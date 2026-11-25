@@ -234,3 +234,6 @@ button{cursor:pointer}
 .duration-seg input:focus,.duration-seg input:focus-visible{outline:none}
 .duration-seg span{color:var(--text-secondary);font-size:14px}
 .duration-sep{align-self:stretch;width:1px;background:var(--border)}
+
+/* no hover strip on the action rows (View Mail / Update Details) */
+.shell.is-row-hover .nested-row.action-row:hover{background:transparent;box-shadow:none}
