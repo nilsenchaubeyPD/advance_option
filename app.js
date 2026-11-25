@@ -351,14 +351,14 @@
     if (o['reminder-email']) {
       var minMin = state.remHours === 0 ? 5 : 0;
       function seg(id, label, val, min, max, unit) {
-        return '<label class="duration-seg"><input id="control-' + id + '" data-stepper="' + id + '" data-min="' + min + '" data-max="' + max + '" inputmode="numeric" autocomplete="off" aria-label="' + label +
+        return '<label class="duration-seg"><input id="control-' + id + '" data-stepper="' + id + '" data-min="' + min + '" data-max="' + max + '" inputmode="numeric" pattern="[0-9]*" maxlength="2" spellcheck="false" autocomplete="off" aria-label="' + label +
           '" aria-valuemin="' + min + '" aria-valuemax="' + max + '" aria-valuenow="' + val + '" value="' + val + '"><span>' + unit + '</span></label>';
       }
       rem += '<div><div class="nested-row depth-1" data-setting="reminder-offset"><div class="lead"><span class="label-line"><span class="setting-label">Send reminder before exam start</span></span></div>' +
-        '<div class="controls"><div class="time-col"><div class="duration" role="group" aria-label="Send reminder before exam start">' +
+        '<div class="controls"><div class="time-col"><p class="helper-text">Sends at ' + fmt(EXAM_START - remTotal() * 60000) + '</p>' +
+        '<div class="duration" role="group" aria-label="Send reminder before exam start">' +
         seg('reminder-hours', 'Reminder hours', state.remHours, 0, 72, 'hr') + '<span class="duration-sep" aria-hidden="true"></span>' +
-        seg('reminder-minutes', 'Reminder minutes', state.remMinutes, minMin, 59, 'min') + '</div>' +
-        '<p class="helper-text">Sends at ' + fmt(EXAM_START - remTotal() * 60000) + '</p></div></div></div></div>';
+        seg('reminder-minutes', 'Reminder minutes', state.remMinutes, minMin, 59, 'min') + '</div></div></div></div></div>';
       rem += actions('rem', 'View Reminder Mail', remDirty(), true);
     }
 
@@ -592,6 +592,11 @@
 
   app.addEventListener('input', function (e) {
     var t = e.target;
+    if (t.dataset && t.dataset.stepper) {
+      var clean = t.value.replace(/\D/g, '').slice(0, 2);
+      if (clean !== t.value) t.value = clean;
+      return;
+    }
     if (t.id === 'control-ip-addresses') {
       var hadText = !!state.ipDraft;
       state.ipDraft = t.value; state.ipError = '';

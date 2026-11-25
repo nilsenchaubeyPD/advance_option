@@ -217,8 +217,6 @@ button{cursor:pointer}
 .field-col{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
 .field-error{margin:0;color:#ea580c;font-size:12px;line-height:16px}
 .date-field.is-invalid{border-color:#ea580c;border-width:1.5px}
-.time-col{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
-.helper-text{margin:0;color:var(--text-secondary);font-size:12px;line-height:16px;text-align:right}
 
 /* actions: secondary "View mail" + tertiary "Update Details" on one row */
 .action-group{display:flex;align-items:center;justify-content:flex-end;gap:4px}
@@ -229,11 +227,16 @@ button{cursor:pointer}
 /* reminder offset: one compact duration field (hr | min) */
 .duration{display:inline-flex;align-items:center;height:40px;overflow:hidden;background:#fff;border:1px solid var(--border-strong);border-radius:8px}
 .duration:focus-within{border-color:var(--accent);box-shadow:0 0 0 .5px var(--accent)}
-.duration-seg{display:inline-flex;align-items:center;gap:6px;height:100%;padding:0 12px;cursor:text}
-.duration-seg input{width:28px;padding:0;border:0;background:transparent;color:var(--text);font-size:14px;font-weight:600;text-align:right}
 .duration-seg input:focus,.duration-seg input:focus-visible{outline:none}
-.duration-seg span{color:var(--text-secondary);font-size:14px}
 .duration-sep{align-self:stretch;width:1px;background:var(--border)}
 
 /* no hover strip on the action rows (View Mail / Update Details) */
 .shell.is-row-hover .nested-row.action-row:hover{background:transparent;box-shadow:none}
+
+/* reminder offset: helper on the left, two equal centred boxes on the right */
+.time-col{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px 16px}
+.helper-text{margin:0;color:var(--text-secondary);font-size:12px;line-height:16px;text-align:right}
+.duration-seg{display:flex;flex:0 0 76px;align-items:center;justify-content:center;gap:4px;width:76px;height:100%;padding:0;cursor:text}
+.duration-seg input{width:2ch;min-width:0;padding:0;border:0;background:transparent;color:var(--text);font-size:14px;font-weight:600;text-align:center}
+.duration-seg input:focus,.duration-seg input:focus-visible{outline:none}
+.duration-seg span{color:var(--text-secondary);font-size:14px}
