@@ -201,3 +201,9 @@ button{cursor:pointer}
 .category-header.has-toggle h2{margin:0}
 .is-off{opacity:.5;pointer-events:none;user-select:none}
 .shell.is-row-hover .category-header.has-toggle h2{margin:0}
+
+/* single outer border: no second hairline at the bottom edge */
+.advanced-card .shell{border-radius:0;background:transparent}
+.card-bar.is-collapsed{border-bottom-color:transparent}
+
+.advanced-card .main{padding-bottom:12px}

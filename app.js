@@ -393,7 +393,7 @@
     if (proc && !state.on['proctoring-enabled']) body = '<div class="is-off" inert>' + body + '</div>';
 
     app.innerHTML =
-      '<div class="card-bar"><h1 class="section-title">Advanced Options</h1>' +
+      '<div class="card-bar' + (state.collapsed ? ' is-collapsed' : '') + '"><h1 class="section-title">Advanced Options</h1>' +
       '<button type="button" class="collapse-btn" data-collapse aria-expanded="' + !state.collapsed + '" aria-controls="advanced-form" aria-label="' + (state.collapsed ? 'Expand' : 'Collapse') + ' Advanced Options">' +
       '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"' + (state.collapsed ? ' style="transform:rotate(180deg)"' : '') + '><path d="M4 10l4-4 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>' +
       '<form id="advanced-form" class="shell is-row-hover" aria-label="Advanced options" onsubmit="return false"' + (state.collapsed ? ' hidden' : '') + '>' +
