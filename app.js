@@ -154,6 +154,13 @@
     return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) + ', ' +
       d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   }
+  // "25th Nov 2026, 1:55 PM"
+  function fmtShort(ms) {
+    var d = new Date(ms), n = d.getDate();
+    var suffix = n % 100 >= 11 && n % 100 <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] || 'th');
+    return n + suffix + ' ' + d.toLocaleDateString('en-GB', { month: 'short' }) + ' ' + d.getFullYear() + ', ' +
+      d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  }
   function invError() {
     if (state.invWhen === 'schedule' && state.invDateTime && new Date(state.invDateTime).getTime() <= Date.now()) {
       return 'Invitation time must be in the future.';
@@ -355,7 +362,7 @@
           '" aria-valuemin="' + min + '" aria-valuemax="' + max + '" aria-valuenow="' + val + '" value="' + val + '"><span>' + unit + '</span></label>';
       }
       rem += '<div><div class="nested-row depth-1" data-setting="reminder-offset"><div class="lead"><span class="label-line"><span class="setting-label">Send reminder before exam start</span></span></div>' +
-        '<div class="controls"><div class="time-col"><p class="helper-text">Sends at ' + fmt(EXAM_START - remTotal() * 60000) + '</p>' +
+        '<div class="controls"><div class="time-col"><p class="helper-text">Sends at ' + fmtShort(EXAM_START - remTotal() * 60000) + '</p>' +
         '<div class="duration" role="group" aria-label="Send reminder before exam start">' +
         seg('reminder-hours', 'Reminder hours', state.remHours, 0, 72, 'hr') + '<span class="duration-sep" aria-hidden="true"></span>' +
         seg('reminder-minutes', 'Reminder minutes', state.remMinutes, minMin, 59, 'min') + '</div></div></div></div></div>';
